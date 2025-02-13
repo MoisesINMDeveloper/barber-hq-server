@@ -1,0 +1,211 @@
+📘 Documentación del Sistema de Gestión de Citas para Barberías
+📌 Introducción
+Este sistema permite a los clientes agendar citas con barberos sin necesidad de registrarse, identificándose solo con su nombre y número de teléfono. Los administradores pueden gestionar pagos, citas y solicitudes de retiro de los barberos. Además, cada barbero cuenta con su propio catálogo de cortes de cabello con precios e imágenes.
+
+🗂️ Base de Datos - Esquema Prisma
+📌 Estructura General
+📌 El sistema se basa en los siguientes modelos:
+
+Appointment → Citas de los clientes con barberos.
+Payment → Gestión de pagos de las citas.
+Review → Calificaciones y comentarios de los clientes sobre los barberos.
+WithdrawalRequest → Solicitudes de retiro de dinero de los barberos.
+Haircut → Catálogo de cortes de cabello de cada barbero.
+User → Barberos y administradores.
+Availability → Horarios disponibles de los barberos.
+Discount → Descuentos para clientes recurrentes.
+Barbershop → Datos de la barbería y sus barberos.
+📑 Modelos de Datos (Esquema Prisma)
+📌 Appointment (Citas)
+Gestiona las citas agendadas por los clientes.
+📌 Relacionado con: User (barbero), Haircut, Payment, Review.
+
+prisma
+Copiar
+Editar
+model Appointment {
+  id         String   @id @default(uuid())
+  clientName String  
+  phone      String  
+  barberId   String  
+  barber     User     @relation(fields: [barberId], references: [id])
+  date       DateTime
+  status     Status   @default(PENDING)
+  haircutId  String?  
+  haircut    Haircut? @relation(fields: [haircutId], references: [id])
+  paymentId  String?  
+  payment    Payment? @relation(fields: [paymentId], references: [id])
+  review     Review?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+📌 Estados posibles:
+
+PENDING: Cita pendiente.
+CONFIRMED: Confirmada por el administrador.
+CANCELED: Cancelada.
+📌 Payment (Pagos)
+Maneja los pagos de las citas.
+
+prisma
+Copiar
+Editar
+model Payment {
+  id          String   @id @default(uuid())
+  appointmentId String @unique
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  amount      Float
+  method      PaymentMethod 
+  status      PaymentStatus @default(PENDING)
+  verifiedBy  String?  
+  admin       User?    @relation(fields: [verifiedBy], references: [id])
+  createdAt   DateTime @default(now())
+}
+📌 Métodos de pago: CASH, CARD, TRANSFER.
+📌 Estados: PENDING, APPROVED, REJECTED.
+
+📌 Review (Reseñas)
+Registra las calificaciones y comentarios de los clientes sobre los barberos.
+
+prisma
+Copiar
+Editar
+model Review {
+  id          String   @id @default(uuid())
+  phone       String  
+  appointmentId String @unique
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  barberId    String
+  barber      User     @relation(fields: [barberId], references: [id])
+  rating      Int      
+  comment     String?
+  createdAt   DateTime @default(now())
+}
+📌 Calificación: Escala del 0 al 5.
+
+📌 WithdrawalRequest (Solicitudes de Retiro)
+Gestiona los retiros de los barberos.
+
+prisma
+Copiar
+Editar
+model WithdrawalRequest {
+  id          String   @id @default(uuid())
+  barberId    String
+  barber      User     @relation(fields: [barberId], references: [id])
+  amount      Float
+  status      WithdrawalStatus @default(PENDING)
+  processedBy String?  
+  admin       User?    @relation(fields: [processedBy], references: [id])
+  createdAt   DateTime @default(now())
+}
+📌 Estados: PENDING, APPROVED, REJECTED.
+
+📌 Haircut (Cortes de Cabello)
+Cada barbero tiene su propio catálogo de cortes con imágenes y precios.
+
+prisma
+Copiar
+Editar
+model Haircut {
+  id          String   @id @default(uuid())
+  name        String
+  price       Float
+  description String?
+  imageUrl    String?
+  barberId    String  
+  barber      User     @relation(fields: [barberId], references: [id])
+  appointments Appointment[]
+}
+📌 User (Usuarios: Barberos y Administradores)
+Los barberos pueden gestionar citas, pagos y retirar sus ingresos.
+
+prisma
+Copiar
+Editar
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String?  @unique
+  password    String?
+  role        Role     @default(BARBER)
+  phone       String?  @unique
+  bankName    String?  
+  bankCode    String?  
+  bankAccount String?  
+  nationalId  String?  
+  haircuts    Haircut[]  
+  appointments Appointment[]
+  reviews     Review[]
+  payments    Payment[]
+  withdrawals WithdrawalRequest[]
+}
+📌 Roles:
+
+ADMIN: Gestiona el sistema.
+BARBER: Atiende a los clientes.
+📌 Availability (Disponibilidad de Barberos)
+Cada barbero establece su horario de atención.
+
+prisma
+Copiar
+Editar
+model Availability {
+  id        String   @id @default(uuid())
+  barberId  String   
+  barber    User     @relation(fields: [barberId], references: [id])
+  day       String   
+  startTime String   
+  endTime   String   
+  createdAt DateTime @default(now())
+}
+📌 Discount (Descuentos)
+Se aplican descuentos a clientes frecuentes.
+
+prisma
+Copiar
+Editar
+model Discount {
+  id        String  @id @default(uuid())
+  phone     String  
+  type      String  
+  amount    Float   
+  isUsed    Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+📌 Barbershop (Barberías)
+Si hay múltiples barberías, cada una puede administrar sus propios barberos.
+
+prisma
+Copiar
+Editar
+model Barbershop {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  phone     String
+  barbers   User[]
+}
+📊 Flujo del Sistema
+1️⃣ Cliente agenda una cita
+El cliente elige un barbero y un corte de su catálogo.
+Ingresa su nombre y teléfono.
+Selecciona fecha y hora.
+Se envía una notificación al administrador.
+2️⃣ Pago de la cita
+El cliente paga en efectivo, tarjeta o transferencia.
+El administrador verifica el pago y lo aprueba.
+La cita se confirma y se bloquea en el calendario.
+3️⃣ Evaluación del servicio
+Después del corte, el cliente califica al barbero (0-5 estrellas).
+Puede dejar un comentario opcional.
+4️⃣ Retiro de dinero del barbero
+El barbero solicita el retiro de sus ingresos.
+El administrador aprueba o rechaza la solicitud.
+El dinero se transfiere a la cuenta del barbero.
+🚀 Conclusión
+✅ Esquema bien optimizado con Prisma.
+✅ Flujo de trabajo claro y automatizado.
+✅ Base sólida para integrar Express y React Native.
+
+Si necesitas ajustes, dime y lo refinamos. ¡Listo para empezar! 🚀
