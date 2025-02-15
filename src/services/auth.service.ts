@@ -63,7 +63,7 @@ export const setVerificationCode = async (userId: number, code: string) => {
   expiryDate.setHours(expiryDate.getHours() + 1); // Código válido por 1 hora
 
   await userModel.update({
-    where: { id: userId },
+    where: { id: userId.toString() },
     data: {
       verificationCode: code,
       codeExpiry: expiryDate,

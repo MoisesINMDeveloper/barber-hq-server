@@ -1,0 +1,168 @@
+// Definir la fuente de datos para la base de datos PostgreSQL
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Definir el generador para Prisma Client
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Modelo de Cita
+model Appointment {
+  id         String   @id @default(uuid())
+  clientName String   // Nombre del cliente
+  phone      String   // Número de teléfono del cliente
+  barberId   String   // Barbero elegido por el cliente
+  barber     User     @relation(fields: [barberId], references: [id])
+  date       DateTime
+  status     Status   @default(PENDING)
+  haircutId  String?  // Corte de cabello elegido
+  haircut    Haircut? @relation(fields: [haircutId], references: [id])
+  paymentId  String?  
+  payment    Payment? // Eliminamos fields y references aquí
+  review     Review?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Modelo de Pago
+model Payment {
+  id          String   @id @default(uuid())
+  appointmentId String @unique
+  appointment  Appointment @relation(fields: [appointmentId], references: [id]) // Relación con la cita
+  amount      Float
+  method      PaymentMethod // CASH, CARD, TRANSFER
+  status      PaymentStatus @default(PENDING) // PENDING, APPROVED, REJECTED
+  verifiedBy  String?  // ID del administrador que verificó el pago
+  admin       User?    @relation(fields: [verifiedBy], references: [id]) // Relación con el administrador
+  createdAt   DateTime @default(now())
+}
+
+// Modelo de Reseña
+model Review {
+  id          String   @id @default(uuid())
+  phone       String   // Cliente identificado por número de teléfono
+  appointmentId String @unique
+  appointment  Appointment @relation(fields: [appointmentId], references: [id])
+  barberId    String
+  barber      User     @relation(fields: [barberId], references: [id])
+  rating      Int      // Calificación (0-5 estrellas)
+  comment     String?
+  createdAt   DateTime @default(now())
+}
+
+// Modelo de Solicitud de Retiro
+model WithdrawalRequest {
+  id          String   @id @default(uuid())
+  barberId    String
+  barber      User     @relation("BarberWithdrawal", fields: [barberId], references: [id]) // Relación con el barbero
+  amount      Float
+  status      WithdrawalStatus @default(PENDING) // PENDING, APPROVED, REJECTED
+  processedBy String?  // ID del administrador que procesó la solicitud
+  admin       User?    @relation("AdminWithdrawal", fields: [processedBy], references: [id]) // Relación con el administrador
+  createdAt   DateTime @default(now())
+}
+
+// Modelo de Corte de Cabello
+model Haircut {
+  id          String   @id @default(uuid())
+  name        String
+  price       Float
+  description String?
+  imageUrl    String?
+  barberId    String   // Relación con el barbero
+  barber      User     @relation(fields: [barberId], references: [id])
+  appointments Appointment[]
+}
+
+// Modelo de Usuario (Barbero o Administrador)
+model User {
+  id          String   @id @default(uuid())
+  name        String
+  email       String?  @unique
+  password    String?
+  role        Role     @default(BARBER)
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  verificationCode     String?
+  codeExpiry        DateTime?
+  phone       String?  @unique
+  bankName    String?  // Nombre del banco
+  bankCode    String?  // Código del banco
+  bankAccount String?  // Número de cuenta bancaria
+  nationalId  String?  // Cédula del barbero
+  haircuts    Haircut[]  // Catálogo de cortes del barbero
+  appointments Appointment[]
+  reviews     Review[]
+  payments    Payment[]
+  withdrawals WithdrawalRequest[] @relation("BarberWithdrawal") // Relación con solicitudes de retiro del barbero
+  adminWithdrawals WithdrawalRequest[] @relation("AdminWithdrawal") // Relación con solicitudes de retiro procesadas por administrador
+  availabilities Availability[]
+  barbershops Barbershop[]   // Relación con las barberías donde trabaja el barbero
+}
+
+// Modelo de Disponibilidad de Barbero
+model Availability {
+  id        String   @id @default(uuid())
+  barberId  String   // Relación con el barbero
+  barber    User     @relation(fields: [barberId], references: [id])
+  day       String   // Ejemplo: "Lunes", "Martes"
+  startTime String   // Ejemplo: "09:00"
+  endTime   String   // Ejemplo: "18:00"
+  createdAt DateTime @default(now())
+}
+
+// Modelo de Descuento
+model Discount {
+  id        String  @id @default(uuid())
+  phone     String  // Cliente identificado por número de teléfono
+  type      String  // Ejemplo: "Fidelidad", "Promoción"
+  amount    Float   // Porcentaje de descuento
+  isUsed    Boolean @default(false)
+  createdAt DateTime @default(now())
+}
+
+// Modelo de Barbería
+model Barbershop {
+  id        String   @id @default(uuid())
+  name      String
+  address   String
+  phone     String
+  barbers   User[]   // Relación con los barberos asociados a la barbería
+}
+
+// Enum para Roles de Usuario
+enum Role {
+  ADMIN
+  BARBER
+}
+
+// Enum para Estados de Cita
+enum Status {
+  PENDING
+  CONFIRMED
+  CANCELED
+}
+
+// Enum para Estados de Pago
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Enum para Métodos de Pago
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+}
+
+// Enum para Estados de Solicitud de Retiro
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
