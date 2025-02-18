@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-// import authRoute from './routes/auth/auth.routes';
+import authRoute from './routes/auth/auth.routes';
 // import clientRoute from './routes/client/client.routes';
 // import adminRoute from './routes/admin/admin.routes';
 // import citasRoute from './routes/citas/citas.routes';
@@ -41,7 +41,7 @@ app.use((req, res, next) => {
 app.use(express.json());
 
 // // Rutas
-// app.use('/ws/auth', authRoute);
+app.use('/ws/auth', authRoute);
 // app.use('/ws/client', clientRoute);
 // app.use('/ws/admin', adminRoute);
 // app.use('/ws/citas', citasRoute);

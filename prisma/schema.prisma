@@ -45,16 +45,16 @@ enum WithdrawalStatus {
 
 // Modelo de Cita
 model Appointment {
-  id         String   @id @default(uuid())
+  id         Int      @id @default(autoincrement())
   clientName String   // Nombre del cliente
   phone      String   // Número de teléfono del cliente
-  barberId   String   // Barbero elegido por el cliente
+  barberId   Int   // Barbero elegido por el cliente
   barber     User     @relation(fields: [barberId], references: [id])
   date       DateTime
   status     Status   @default(PENDING)
-  haircutId  String?  // Corte de cabello elegido
+  haircutId  Int?  // Corte de cabello elegido
   haircut    Haircut? @relation(fields: [haircutId], references: [id])
-  paymentId  String?  
+  paymentId  Int?  
   payment    Payment? // Eliminamos fields y references aquí
   review     Review?
   createdAt  DateTime @default(now())
@@ -63,69 +63,67 @@ model Appointment {
 
 // Modelo de Usuario (Barbero o Administrador)
 model User {
-  id                String          @id @default(uuid())
-  name              String
-  email             String?         @unique
-  password          String?
-  role              Role            @default(BARBER)
-  verified          Boolean         @default(false)
-  createdAt         DateTime        @default(now())
-  verificationCode  String?
-  codeExpiry        DateTime?
-  phone             String?         @unique
-  bankAccount       BankAccount?    @relation(fields: [bankAccountId], references: [id])
-  bankAccountId     String?         // Relación con el modelo BankAccount
-  nationalId        String?         // Cédula del barbero
-  haircuts          Haircut[]       // Catálogo de cortes del barbero
-  appointments      Appointment[]    
-  reviews           Review[]        
-  payments          Payment[]       
-  withdrawals       WithdrawalRequest[] @relation("BarberWithdrawal") 
-  adminWithdrawals  WithdrawalRequest[] @relation("AdminWithdrawal") 
-  availabilities    Availability[]   
-  barbershops       Barbershop[]    // Relación con las barberías donde trabaja el barbero
+  id               Int      @id @default(autoincrement())
+  name             String
+  email            String?      @unique
+  password         String?
+  role             Role         @default(BARBER)
+  verified         Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  verificationCode String?
+  codeExpiry       DateTime?
+  phone            String?      @unique
+  bankAccount      BankAccount? @relation(fields: [bankAccountId], references: [id])
+  bankAccountId    Int?      @unique  // Asegurar que sea único
+  nationalId       String?      @unique
+  haircuts         Haircut[]
+  appointments     Appointment[]
+  reviews          Review[]
+  payments         Payment[]
+  withdrawals      WithdrawalRequest[] @relation("BarberWithdrawal") 
+  adminWithdrawals WithdrawalRequest[] @relation("AdminWithdrawal") 
+  availabilities   Availability[]
+  barbershops      Barbershop[]
 }
 
 model BankAccount {
-  id            String  @id @default(uuid())
-  bankName      String
-  bankCode      String
-  bankAccount   String
-  user          User    @relation(fields: [userId], references: [id])
-  userId        String  // Relación con el modelo User
+  id           Int      @id @default(autoincrement())
+  bankName     String
+  bankCode     String
+  user         User?   @relation()
 }
 
 // Modelo de Corte de Cabello
 model Haircut {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   name        String
   price       Float
   description String?
   imageUrl    String?
-  barberId    String   // Relación con el barbero
+  barberId    Int   // Relación con el barbero
   barber      User     @relation(fields: [barberId], references: [id])
   appointments Appointment[]
 }
 
 // Modelo de Solicitud de Retiro
 model WithdrawalRequest {
-  id          String   @id @default(uuid())
-  barberId    String
+  id          Int      @id @default(autoincrement())
+  barberId    Int
   barber      User     @relation("BarberWithdrawal", fields: [barberId], references: [id]) // Relación con el barbero
   amount      Float
   status      WithdrawalStatus @default(PENDING) // PENDING, APPROVED, REJECTED
-  processedBy String?  // ID del administrador que procesó la solicitud
+  processedBy Int?  // ID del administrador que procesó la solicitud
   admin       User?    @relation("AdminWithdrawal", fields: [processedBy], references: [id]) // Relación con el administrador
   createdAt   DateTime @default(now())
 }
 
 // Modelo de Reseña
 model Review {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   phone       String   // Cliente identificado por número de teléfono
-  appointmentId String @unique
+  appointmentId Int @unique
   appointment  Appointment @relation(fields: [appointmentId], references: [id])
-  barberId    String
+  barberId    Int
   barber      User     @relation(fields: [barberId], references: [id])
   rating      Int      // Calificación (0-5 estrellas)
   comment     String?
@@ -134,8 +132,8 @@ model Review {
 
 // Modelo de Disponibilidad de Barbero
 model Availability {
-  id        String   @id @default(uuid())
-  barberId  String   // Relación con el barbero
+  id        Int      @id @default(autoincrement())
+  barberId  Int   // Relación con el barbero
   barber    User     @relation(fields: [barberId], references: [id])
   day       String   // Ejemplo: "Lunes", "Martes"
   startTime String   // Ejemplo: "09:00"
@@ -145,7 +143,7 @@ model Availability {
 
 // Modelo de Descuento
 model Discount {
-  id        String  @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   phone     String  // Cliente identificado por número de teléfono
   type      String  // Ejemplo: "Fidelidad", "Promoción"
   amount    Float   // Porcentaje de descuento
@@ -155,7 +153,7 @@ model Discount {
 
 // Modelo de Barbería
 model Barbershop {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   name      String
   address   String
   phone     String
@@ -164,13 +162,13 @@ model Barbershop {
 
 // Modelo de Pago
 model Payment {
-  id          String   @id @default(uuid())
-  appointmentId String @unique
+  id          Int      @id @default(autoincrement())
+  appointmentId Int @unique
   appointment  Appointment @relation(fields: [appointmentId], references: [id]) // Relación con la cita
   amount      Float
   method      PaymentMethod // CASH, CARD, TRANSFER
   status      PaymentStatus @default(PENDING) // PENDING, APPROVED, REJECTED
-  verifiedBy  String?  // ID del administrador que verificó el pago
+  verifiedBy  Int?  // ID del administrador que verificó el pago
   admin       User?    @relation(fields: [verifiedBy], references: [id]) // Relación con el administrador
   createdAt   DateTime @default(now())
 }

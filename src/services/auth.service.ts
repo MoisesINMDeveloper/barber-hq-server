@@ -1,5 +1,4 @@
 import bcrypt from 'bcrypt';
-// import { User } from '../types/user.interface';
 import jwt from 'jsonwebtoken';
 import { User } from '@prisma/client';
 import userModel from '../models/user.prisma';
@@ -63,7 +62,7 @@ export const setVerificationCode = async (userId: number, code: string) => {
   expiryDate.setHours(expiryDate.getHours() + 1); // Código válido por 1 hora
 
   await userModel.update({
-    where: { id: userId.toString() },
+    where: { id: userId },
     data: {
       verificationCode: code,
       codeExpiry: expiryDate,
