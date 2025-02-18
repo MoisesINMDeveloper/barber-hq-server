@@ -1,20 +1,20 @@
 import express from 'express';
 import {
-//   forgotPassword,
-//   login,
-//   recoveryPassword,
+  forgotPassword,
+  login,
+  recoveryPassword,
   register,
-//   resendCode,
-//   verify,
+  resendCode,
+  verify,
 } from './controllers/index';
 
 const router = express.Router();
 
 router.post('/register', register);
-// router.post('/verify', verify);
-// router.post('/login', login);
-// router.post('/forgotPassword', forgotPassword);
-// router.post('/recoveryPassword', recoveryPassword);
-// router.post('/resendCode', resendCode);
+router.post('/verify', verify);
+router.post('/login', login);
+router.post('/forgotPassword', forgotPassword);
+router.post('/recoveryPassword', recoveryPassword);
+router.post('/resendCode', resendCode);
 
 export default router;
