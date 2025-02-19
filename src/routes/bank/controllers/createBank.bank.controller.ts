@@ -1,74 +1,46 @@
-// src/controllers/bankAccount.controller.ts
-import { Request, Response } from "express";
-import bankPrisma from "../../../models/bank.prisma";
-// Crear una cuenta bancaria
-export const createBankAccount = async (req: Request, res: Response) => {
+import { Request, Response } from 'express';
+import bankPrisma from '../../../models/bank.prisma';
+
+export const bankAccount = async (req: Request, res: Response): Promise<void> => {
+  const { bankName, bankCode } = req.body;
+
   try {
-    const { bankName, bankCode, bankAccount, userId } = req.body;
-    
-    const bankAccountExists = await bankPrisma.findUnique({
-      where: { userId },
-    });
-    
-    if (bankAccountExists) {
-      return res.status(400).json({ message: "El usuario ya tiene una cuenta bancaria." });
+    //--Prevalidaciones--//
+    if (!bankName || !bankCode) {
+      res.status(400).json({ message: 'Todos los campos son requeridos.' });
+      return;
     }
-    
-    const newBankAccount = await bankPrisma.create({
-      data: { bankName, bankCode, bankAccount, userId },
-    });
-    
-    res.status(201).json(newBankAccount);
-  } catch (error) {
-    res.status(500).json({ error: (error as any).message });
-  }
-};
 
-// Obtener una cuenta bancaria por ID de usuario
-export const getBankAccountByUser = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const bankAccount = await bankPrisma.findUnique({
-      where: { userId },
-    });
-    
-    if (!bankAccount) {
-      return res.status(404).json({ message: "Cuenta bancaria no encontrada." });
+    //--Verificamos si ya existe un banco con el mismo nombre o código--//
+    const existingBankByName = await bankPrisma.findFirst({ where: { bankName } });
+    const existingBankByCode = await bankPrisma.findFirst({ where: { bankCode } });
+
+    if (existingBankByName && existingBankByCode) {
+      res.status(400).json({ 
+        message: `Ya existe un banco con el nombre "${bankName}" y el código "${bankCode}".` 
+      });
+      return;
     }
-    
-    res.status(200).json(bankAccount);
-  } catch (error) {
-    res.status(500).json({ error: (error as any).message });
-  }
-};
 
-// Actualizar una cuenta bancaria
-export const updateBankAccount = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    const { bankName, bankCode, bankAccount } = req.body;
-    
-    const updatedBankAccount = await bankPrisma.update({
-      where: { userId },
-      data: { bankName, bankCode, bankAccount },
-    });
-    
-    res.status(200).json(updatedBankAccount);
-  } catch (error) {
-    res.status(500).json({ error: (error as any).message });
-  }
-};
+    if (existingBankByName) {
+      res.status(400).json({ 
+        message: `Ya existe un banco con el nombre "${bankName}".` 
+      });
+      return;
+    }
 
-// Eliminar una cuenta bancaria
-export const deleteBankAccount = async (req: Request, res: Response) => {
-  try {
-    const { userId } = req.params;
-    await bankPrisma.delete({
-      where: { userId },
-    });
-    
-    res.status(200).json({ message: "Cuenta bancaria eliminada exitosamente." });
+    if (existingBankByCode) {
+      res.status(400).json({ 
+        message: `Ya existe un banco con el código "${bankCode}".` 
+      });
+      return;
+    }
+
+    //--Creamos el banco--//
+    const newBank = await bankPrisma.create({ data: { bankName, bankCode } });
+    res.status(201).json({ message: 'Banco creado con éxito', data: newBank });
   } catch (error) {
-    res.status(500).json({ error: (error as any).message });
+    console.error(error); // Para depuración
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 };

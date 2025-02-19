@@ -17,9 +17,10 @@ export const authenticatedReq = (
 
   //   Si no existe retornamos un 401
   if (!refresh || !token) {
-    return res.status(401).json({
+    res.status(401).json({
       message: 'No autorizado',
     });
+    return
   }
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
