@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import authRoute from './routes/auth/routes';
 import bankRoute from './routes/bank/routes';
+import barberShop from './routes/barbershop/routes';
 // import clientRoute from './routes/client/client.routes';
 // import adminRoute from './routes/admin/admin.routes';
 // import citasRoute from './routes/citas/citas.routes';
@@ -44,6 +45,7 @@ app.use(express.json());
 // // Rutas
 app.use('/ws/auth', authRoute);
 app.use('/ws/bank', bankRoute);
+app.use('/ws/barber-shop', barberShop);
 // app.use('/ws/admin', adminRoute);
 // app.use('/ws/citas', citasRoute);
 // app.use('/ws/cortes', cortesRoute);
