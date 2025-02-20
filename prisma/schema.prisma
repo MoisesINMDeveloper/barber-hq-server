@@ -83,7 +83,8 @@ model User {
   withdrawals      WithdrawalRequest[] @relation("BarberWithdrawal") 
   adminWithdrawals WithdrawalRequest[] @relation("AdminWithdrawal") 
   availabilities   Availability[]
-  barbershops      Barbershop[]
+  barbershops      Barbershop? @relation(fields: [barberShopId], references: [id])
+  barberShopId      Int?
 }
 
 model BankAccount {
