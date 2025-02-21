@@ -53,6 +53,8 @@ model Appointment {
   date       DateTime
   status     Status   @default(PENDING)
   haircutId  Int?  // Corte de cabello elegido
+  paymentReference String?  // Número de referencia del pago
+  paymentImage     String?  // URL de la imagen del comprobante
   haircut    Haircut? @relation(fields: [haircutId], references: [id])
   paymentId  Int?  
   payment    Payment? // Eliminamos fields y references aquí
@@ -100,7 +102,7 @@ model Haircut {
   name        String
   price       Float
   description String?
-  imageUrl    String?
+  imageUrl    String[]
   barberId    Int   // Relación con el barbero
   barber      User     @relation(fields: [barberId], references: [id])
   appointments Appointment[]
