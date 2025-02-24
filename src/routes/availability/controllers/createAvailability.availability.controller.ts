@@ -4,30 +4,40 @@ import moment from 'moment-timezone';
 
 export const createAvailability = async (req: Request, res: Response) => {
     try {
-        const { barberId, day, startTime, endTime } = req.body;
+        let { barberId, day, startTime, endTime } = req.body;
 
         if (!barberId || !day || !startTime || !endTime) {
             res.status(400).json({ message: 'Faltan datos obligatorios.' });
+            return
+        }
+
+        // Capitalizar el día correctamente
+        day = day.charAt(0).toUpperCase() + day.slice(1).toLowerCase();
+
+        // Validar que el formato de startTime y endTime sea correcto
+        const isValidStartTime = moment(startTime, 'HH:mm:ss', true).isValid();
+        const isValidEndTime = moment(endTime, 'HH:mm:ss', true).isValid();
+
+        if (!isValidStartTime || !isValidEndTime) {
+            res.status(400).json({ message: 'Formato de hora inválido. Use HH:mm:ss.' });
+            return;        
+        }
+
+        // Verificar que startTime sea menor que endTime
+        if (moment(startTime, 'HH:mm:ss').isSameOrAfter(moment(endTime, 'HH:mm:ss'))) {
+            res.status(400).json({ message: 'La hora de inicio debe ser menor que la hora de fin.' });
             return;
         }
 
-        // Convertir las horas de inicio y fin a la zona horaria de Caracas
-        const startMoment = moment.tz(startTime, 'HH:mm', 'America/Caracas');
-        const endMoment = moment.tz(endTime, 'HH:mm', 'America/Caracas');
-
-        // Convertir las horas a formato 'HH:mm' para almacenarlas correctamente
-        const formattedStartTime = startMoment.format('HH:mm');
-        const formattedEndTime = endMoment.format('HH:mm');
-
-        // Verificar si ya existe disponibilidad para ese barbero en el mismo día y rango de horario
+        // Verificar si ya existe disponibilidad en ese horario
         const existingAvailability = await availabilityPrisma.findFirst({
             where: {
                 barberId,
                 day,
                 OR: [
                     {
-                        startTime: { lte: formattedEndTime },  // Compara con la hora final
-                        endTime: { gte: formattedStartTime }   // Compara con la hora de inicio
+                        startTime: { lte: endTime },
+                        endTime: { gte: startTime }
                     }
                 ]
             }
@@ -36,13 +46,13 @@ export const createAvailability = async (req: Request, res: Response) => {
         if (existingAvailability) {
             res.status(400).json({
                 message: `El barbero ya tiene disponibilidad registrada para el ${day} en un horario similar.`
+            
             });
-            return;
         }
 
-        // Crear la disponibilidad, las horas ya están en la zona horaria correcta
+        // Crear disponibilidad
         const newAvailability = await availabilityPrisma.create({
-            data: { barberId, day, startTime: formattedStartTime, endTime: formattedEndTime },
+            data: { barberId, day, startTime, endTime },
         });
 
         res.status(201).json({ message: 'Disponibilidad creada con éxito', data: newAvailability });
