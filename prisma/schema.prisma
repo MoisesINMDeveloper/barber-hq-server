@@ -87,6 +87,7 @@ model User {
   availabilities   Availability[]
   barbershops      Barbershop? @relation(fields: [barberShopId], references: [id])
   barberShopId      Int?
+  balance          Float @default(0.0)
 }
 
 model BankAccount {
